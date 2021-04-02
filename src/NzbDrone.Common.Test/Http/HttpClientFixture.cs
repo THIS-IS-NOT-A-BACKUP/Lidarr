@@ -46,7 +46,7 @@ namespace NzbDrone.Common.Test.Http
 
             TestLogger.Info($"{candidates.Length} TestSites available.");
 
-            _httpBinSleep = _httpBinHosts.Count() < 2 ? 100 : 10;
+            _httpBinSleep = _httpBinHosts.Length < 2 ? 100 : 10;
         }
 
         private bool IsTestSiteAvailable(string site)
@@ -100,7 +100,7 @@ namespace NzbDrone.Common.Test.Http
             Mocker.SetConstant<ICacheManager>(Mocker.Resolve<CacheManager>());
             Mocker.SetConstant<ICreateManagedWebProxy>(Mocker.Resolve<ManagedWebProxyFactory>());
             Mocker.SetConstant<IRateLimitService>(Mocker.Resolve<RateLimitService>());
-            Mocker.SetConstant<IEnumerable<IHttpRequestInterceptor>>(new IHttpRequestInterceptor[0]);
+            Mocker.SetConstant<IEnumerable<IHttpRequestInterceptor>>(Array.Empty<IHttpRequestInterceptor>());
             Mocker.SetConstant<IHttpDispatcher>(Mocker.Resolve<TDispatcher>());
 
             // Used for manual testing of socks proxies.
@@ -188,6 +188,28 @@ namespace NzbDrone.Common.Test.Http
             ((int)exception.Response.StatusCode).Should().Be(statusCode);
 
             ExceptionVerification.IgnoreWarns();
+        }
+
+        [Test]
+        public void should_not_throw_on_suppressed_status_codes()
+        {
+            var request = new HttpRequest($"https://{_httpBinHost}/status/{HttpStatusCode.NotFound}");
+            request.SuppressHttpErrorStatusCodes = new[] { HttpStatusCode.NotFound };
+
+            Assert.Throws<HttpException>(() => Subject.Get<HttpBinResource>(request));
+
+            ExceptionVerification.IgnoreWarns();
+        }
+
+        [Test]
+        public void should_not_log_unsuccessful_status_codes()
+        {
+            var request = new HttpRequest($"https://{_httpBinHost}/status/{HttpStatusCode.NotFound}");
+            request.LogHttpError = false;
+
+            Assert.Throws<HttpException>(() => Subject.Get<HttpBinResource>(request));
+
+            ExceptionVerification.ExpectedWarns(0);
         }
 
         [Test]
