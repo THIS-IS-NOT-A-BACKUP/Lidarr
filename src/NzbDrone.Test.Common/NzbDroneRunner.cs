@@ -45,10 +45,6 @@ namespace NzbDrone.Test.Common
             {
                 lidarrConsoleExe = "Lidarr.Console.exe";
             }
-            else if (PlatformInfo.IsMono)
-            {
-                lidarrConsoleExe = "Lidarr.exe";
-            }
             else
             {
                 lidarrConsoleExe = "Lidarr";
@@ -57,8 +53,7 @@ namespace NzbDrone.Test.Common
             _startupLog = new List<string>();
             if (BuildInfo.IsDebug)
             {
-                var frameworkFolder = PlatformInfo.IsNetCore ? "netcoreapp3.1" : "net462";
-                Start(Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "_output", frameworkFolder, lidarrConsoleExe));
+                Start(Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "_output", "net5.0", lidarrConsoleExe));
             }
             else
             {

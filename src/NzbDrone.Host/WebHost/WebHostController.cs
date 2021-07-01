@@ -105,25 +105,14 @@ namespace NzbDrone.Host
                 {
                     services
                     .AddSignalR()
-#if !NETCOREAPP
-                    .AddJsonProtocol(
-                        options =>
-                        {
-                            options.PayloadSerializerSettings = Json.GetSerializerSettings();
-                        });
-#else
-                    .AddNewtonsoftJsonProtocol(
-                        options =>
-                        {
-                            options.PayloadSerializerSettings = Json.GetSerializerSettings();
-                        });
-#endif
+                    .AddJsonProtocol(options =>
+                    {
+                        options.PayloadSerializerOptions = STJson.GetSerializerSettings();
+                    });
                 })
                 .Configure(app =>
                 {
-#if NETCOREAPP
                     app.UseRouting();
-#endif
                     app.Properties["host.AppName"] = BuildInfo.AppName;
                     app.UsePathBase(_configFileProvider.UrlBase);
 

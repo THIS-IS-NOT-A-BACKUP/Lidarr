@@ -13,6 +13,7 @@ using Lidarr.Api.V1.DownloadClient;
 using Lidarr.Api.V1.History;
 using Lidarr.Api.V1.Profiles.Quality;
 using Lidarr.Api.V1.RootFolders;
+using Lidarr.Api.V1.System.Tasks;
 using Lidarr.Api.V1.Tags;
 using Microsoft.AspNetCore.SignalR.Client;
 using NLog;
@@ -27,6 +28,7 @@ using NzbDrone.SignalR;
 using NzbDrone.Test.Common;
 using NzbDrone.Test.Common.Categories;
 using RestSharp;
+using RestSharp.Serializers.SystemTextJson;
 
 namespace NzbDrone.Integration.Test
 {
@@ -37,6 +39,7 @@ namespace NzbDrone.Integration.Test
 
         public ClientBase<BlacklistResource> Blacklist;
         public CommandClient Commands;
+        public ClientBase<TaskResource> Tasks;
         public DownloadClientClient DownloadClients;
         public AlbumClient Albums;
         public TrackClient Tracks;
@@ -98,9 +101,11 @@ namespace NzbDrone.Integration.Test
             RestClient = new RestClient(RootUrl + "api/v1/");
             RestClient.AddDefaultHeader("Authentication", ApiKey);
             RestClient.AddDefaultHeader("X-Api-Key", ApiKey);
+            RestClient.UseSystemTextJson();
 
             Blacklist = new ClientBase<BlacklistResource>(RestClient, ApiKey);
             Commands = new CommandClient(RestClient, ApiKey);
+            Tasks = new ClientBase<TaskResource>(RestClient, ApiKey, "system/task");
             DownloadClients = new DownloadClientClient(RestClient, ApiKey);
             Albums = new AlbumClient(RestClient, ApiKey);
             Tracks = new TrackClient(RestClient, ApiKey);
@@ -155,22 +160,6 @@ namespace NzbDrone.Integration.Test
                 catch
                 {
                 }
-            }
-        }
-
-        protected void IgnoreOnMonoVersions(params string[] version_strings)
-        {
-            if (!PlatformInfo.IsMono)
-            {
-                return;
-            }
-
-            var current = PlatformInfo.GetVersion();
-            var versions = version_strings.Select(x => new Version(x)).ToList();
-
-            if (versions.Any(x => x.Major == current.Major && x.Minor == current.Minor))
-            {
-                throw new IgnoreException($"Ignored on mono {PlatformInfo.GetVersion()}");
             }
         }
 
@@ -291,6 +280,7 @@ namespace NzbDrone.Integration.Test
 
             if (changed)
             {
+                result.NextAlbum = result.LastAlbum = null;
                 Artist.Put(result);
             }
 

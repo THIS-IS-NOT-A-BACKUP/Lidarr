@@ -7,10 +7,6 @@ using System.ServiceProcess;
 using NLog;
 using NzbDrone.Common.Processes;
 
-#if NETCOREAPP
-using Microsoft.Extensions.Hosting.WindowsServices;
-#endif
-
 namespace NzbDrone.Common.EnvironmentInfo
 {
     public class RuntimeInfo : IRuntimeInfo
@@ -27,7 +23,6 @@ namespace NzbDrone.Common.EnvironmentInfo
                                serviceProvider.ServiceExist(ServiceProvider.SERVICE_NAME) &&
                                serviceProvider.GetStatus(ServiceProvider.SERVICE_NAME) == ServiceControllerStatus.StartPending;
 
-#if NETCOREAPP
             // net5.0 will return Lidarr.dll for entry assembly, we need the actual
             // executable name (Lidarr on linux).  On mono this will return the location of
             // the mono executable itself, which is not what we want.
@@ -38,11 +33,6 @@ namespace NzbDrone.Common.EnvironmentInfo
                 ExecutingApplication = entry.FileName;
                 IsWindowsTray = OsInfo.IsWindows && entry.ModuleName == $"{ProcessProvider.LIDARR_PROCESS_NAME}.exe";
             }
-#else
-            // On mono we need to get the location of the Lidarr assembly, not Mono.
-            // Can't be running tray app in mono.
-            ExecutingApplication = Assembly.GetEntryAssembly()?.Location;
-#endif
         }
 
         static RuntimeInfo()
@@ -67,12 +57,7 @@ namespace NzbDrone.Common.EnvironmentInfo
             }
         }
 
-#if !NETCOREAPP
         public static bool IsUserInteractive => Environment.UserInteractive;
-#else
-        // Note that Environment.UserInteractive is always true on net core: https://stackoverflow.com/a/57325783
-        public static bool IsUserInteractive => OsInfo.IsWindows && !WindowsServiceHelpers.IsWindowsService();
-#endif
 
         bool IRuntimeInfo.IsUserInteractive => IsUserInteractive;
 
