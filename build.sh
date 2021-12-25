@@ -132,7 +132,7 @@ PackageLinux()
 
     echo "Adding Lidarr.Mono to UpdatePackage"
     cp $folder/Lidarr.Mono.* $folder/Lidarr.Update
-    if [ "$framework" = "net5.0" ]; then
+    if [ "$framework" = "net6.0" ]; then
         cp $folder/Mono.Posix.NETStandard.* $folder/Lidarr.Update
         cp $folder/libMonoPosixHelper.* $folder/Lidarr.Update
     fi
@@ -143,12 +143,13 @@ PackageLinux()
 PackageMacOS()
 {
     local framework="$1"
+    local runtime="$2"
     
-    ProgressStart "Creating MacOS Package for $framework"
+    ProgressStart "Creating $runtime Package for $framework"
 
-    local folder=$artifactsFolder/macos/$framework/Lidarr
+    local folder=$artifactsFolder/$runtime/$framework/Lidarr
 
-    PackageFiles "$folder" "$framework" "osx-x64"
+    PackageFiles "$folder" "$framework" "$runtime"
 
     echo "Removing Service helpers"
     rm -f $folder/ServiceUninstall.*
@@ -159,7 +160,7 @@ PackageMacOS()
 
     echo "Adding Lidarr.Mono to UpdatePackage"
     cp $folder/Lidarr.Mono.* $folder/Lidarr.Update
-    if [ "$framework" = "net5.0" ]; then
+    if [ "$framework" = "net6.0" ]; then
         cp $folder/Mono.Posix.NETStandard.* $folder/Lidarr.Update
         cp $folder/libMonoPosixHelper.* $folder/Lidarr.Update
     fi
@@ -170,10 +171,11 @@ PackageMacOS()
 PackageMacOSApp()
 {
     local framework="$1"
+    local runtime="$2"
     
-    ProgressStart "Creating macOS App Package for $framework"
+    ProgressStart "Creating $runtime App Package for $framework"
 
-    local folder=$artifactsFolder/macos-app/$framework
+    local folder=$artifactsFolder/$runtime-app/$framework
 
     rm -rf $folder
     mkdir -p $folder
@@ -181,7 +183,7 @@ PackageMacOSApp()
     mkdir -p $folder/Lidarr.app/Contents/MacOS
 
     echo "Copying Binaries"
-    cp -r $artifactsFolder/macos/$framework/Lidarr/* $folder/Lidarr.app/Contents/MacOS
+    cp -r $artifactsFolder/$runtime/$framework/Lidarr/* $folder/Lidarr.app/Contents/MacOS
 
     echo "Removing Update Folder"
     rm -r $folder/Lidarr.app/Contents/MacOS/Lidarr.Update
@@ -228,8 +230,8 @@ Package()
             PackageWindows "$framework" "$runtime"
             ;;
         osx)
-            PackageMacOS "$framework"
-            PackageMacOSApp "$framework"
+            PackageMacOS "$framework" "$runtime"
+            PackageMacOSApp "$framework" "$runtime"
             ;;
     esac
 }
@@ -329,14 +331,14 @@ then
     Build
     if [[ -z "$RID" || -z "$FRAMEWORK" ]];
     then
-        PackageTests "net5.0" "win-x64"
-        PackageTests "net5.0" "win-x86"
-        PackageTests "net5.0" "linux-x64"
-        PackageTests "net5.0" "linux-musl-x64"
-        PackageTests "net5.0" "osx-x64"
+        PackageTests "net6.0" "win-x64"
+        PackageTests "net6.0" "win-x86"
+        PackageTests "net6.0" "linux-x64"
+        PackageTests "net6.0" "linux-musl-x64"
+        PackageTests "net6.0" "osx-x64"
         if [ "$ENABLE_BSD" = "YES" ];
         then
-            PackageTests "net5.0" "freebsd-x64"
+            PackageTests "net6.0" "freebsd-x64"
         fi
     else
         PackageTests "$FRAMEWORK" "$RID"
@@ -365,17 +367,18 @@ then
 
     if [[ -z "$RID" || -z "$FRAMEWORK" ]];
     then
-        Package "net5.0" "win-x64"
-        Package "net5.0" "win-x86"
-        Package "net5.0" "linux-x64"
-        Package "net5.0" "linux-musl-x64"
-        Package "net5.0" "linux-arm64"
-        Package "net5.0" "linux-musl-arm64"
-        Package "net5.0" "linux-arm"
-        Package "net5.0" "osx-x64"
+        Package "net6.0" "win-x64"
+        Package "net6.0" "win-x86"
+        Package "net6.0" "linux-x64"
+        Package "net6.0" "linux-musl-x64"
+        Package "net6.0" "linux-arm64"
+        Package "net6.0" "linux-musl-arm64"
+        Package "net6.0" "linux-arm"
+        Package "net6.0" "osx-x64"
+        Package "net6.0" "osx-arm64"
         if [ "$ENABLE_BSD" = "YES" ];
         then
-            Package "net5.0" "freebsd-x64"
+            Package "net6.0" "freebsd-x64"
         fi
     else
         Package "$FRAMEWORK" "$RID"
