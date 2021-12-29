@@ -63,7 +63,7 @@ namespace NzbDrone.Core.Queue
         private Queue MapQueueItem(TrackedDownload trackedDownload, Album album)
         {
             bool downloadForced = false;
-            var history = _historyService.Find(trackedDownload.DownloadItem.DownloadId, HistoryEventType.Grabbed).FirstOrDefault();
+            var history = _historyService.Find(trackedDownload.DownloadItem.DownloadId, EntityHistoryEventType.Grabbed).FirstOrDefault();
             if (history != null && history.Data.ContainsKey("downloadForced"))
             {
                 downloadForced = bool.Parse(history.Data["downloadForced"]);
@@ -92,14 +92,7 @@ namespace NzbDrone.Core.Queue
                 DownloadForced = downloadForced
             };
 
-            if (album != null)
-            {
-                queue.Id = HashConverter.GetHashInt31(string.Format("trackedDownload-{0}-album{1}", trackedDownload.DownloadItem.DownloadId, album.Id));
-            }
-            else
-            {
-                queue.Id = HashConverter.GetHashInt31(string.Format("trackedDownload-{0}", trackedDownload.DownloadItem.DownloadId));
-            }
+            queue.Id = HashConverter.GetHashInt31($"trackedDownload-{trackedDownload.DownloadClient}-{trackedDownload.DownloadItem.DownloadId}-album{album?.Id ?? 0}");
 
             if (queue.Timeleft.HasValue)
             {
