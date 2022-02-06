@@ -3,11 +3,11 @@ name: Sync Upstream
 
 env:
   # Required, URL to upstream (fork base)
-  UPSTREAM_URL: "https://github.com/lidarr/Lidarr.git"
+  UPSTREAM_URL: "https://github.com/Lidarr/Lidarr.git"
   # Required, token to authenticate bot, could use ${{ secrets.GITHUB_TOKEN }} 
   # Over here, we use a PAT instead to authenticate workflow file changes.
   WORKFLOW_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
-  # Optional, defaults to main
+  # Required, is usually "master" or "main"
   UPSTREAM_BRANCH: "develop"
   # Optional, defaults to UPSTREAM_BRANCH
   DOWNSTREAM_BRANCH: ""
