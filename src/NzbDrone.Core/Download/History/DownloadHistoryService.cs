@@ -64,6 +64,11 @@ namespace NzbDrone.Core.Download.History
             // Events are ordered by date descending. We'll return the most recent expected event.
             foreach (var e in events)
             {
+                if (e.EventType == DownloadHistoryEventType.DownloadIgnored)
+                {
+                    return e;
+                }
+
                 if (e.EventType == DownloadHistoryEventType.DownloadGrabbed)
                 {
                     return e;
@@ -96,6 +101,12 @@ namespace NzbDrone.Core.Download.History
 
         public void Handle(AlbumGrabbedEvent message)
         {
+            // Don't store grabbed events for clients that don't download IDs
+            if (message.DownloadId.IsNullOrWhiteSpace())
+            {
+                return;
+            }
+
             var history = new DownloadHistory
             {
                 EventType = DownloadHistoryEventType.DownloadGrabbed,
