@@ -75,6 +75,8 @@ function EditImportListModalContent(props) {
     name,
     enableAutomaticAdd,
     shouldMonitor,
+    shouldMonitorExisting,
+    shouldSearch,
     rootFolderPath,
     monitorNewItems,
     qualityProfileId,
@@ -170,6 +172,34 @@ function EditImportListModalContent(props) {
                     onChange={onInputChange}
                   />
                 </FormGroup>
+
+                <FormGroup>
+                  <FormLabel>
+                    {translate('ShouldMonitorExisting')}
+                  </FormLabel>
+
+                  <FormInputGroup
+                    type={inputTypes.CHECK}
+                    name="shouldMonitorExisting"
+                    helpText={translate('ShouldMonitorExistingHelpText')}
+                    {...shouldMonitorExisting}
+                    onChange={onInputChange}
+                  />
+                </FormGroup>
+
+                <FormGroup>
+                  <FormLabel>
+                    {translate('ShouldSearch')}
+                  </FormLabel>
+
+                  <FormInputGroup
+                    type={inputTypes.CHECK}
+                    name="shouldSearch"
+                    helpText={translate('ShouldSearchHelpText')}
+                    {...shouldSearch}
+                    onChange={onInputChange}
+                  />
+                </FormGroup>
               </FieldSet>
 
               <FieldSet legend={translate('AddedArtistSettings')} >
@@ -243,7 +273,7 @@ function EditImportListModalContent(props) {
 
                 <FormGroup>
                   <FormLabel>
-                    {translate('ReadarrTags')}
+                    {translate('LidarrTags')}
                   </FormLabel>
 
                   <FormInputGroup

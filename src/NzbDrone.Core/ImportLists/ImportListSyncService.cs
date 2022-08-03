@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Instrumentation.Extensions;
 using NzbDrone.Core.ImportLists.Exclusions;
+using NzbDrone.Core.IndexerSearch;
 using NzbDrone.Core.Messaging.Commands;
 using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.MetadataSource;
@@ -68,7 +70,7 @@ namespace NzbDrone.Core.ImportLists
 
         private List<Album> SyncList(ImportListDefinition definition)
         {
-            _logger.ProgressInfo(string.Format("Starting Import List Refresh for List {0}", definition.Name));
+            _logger.ProgressInfo("Starting Import List Refresh for List {0}", definition.Name);
 
             var rssReleases = _listFetcherAndParser.FetchSingleList(definition);
 
@@ -87,13 +89,11 @@ namespace NzbDrone.Core.ImportLists
 
             var reportNumber = 1;
 
-            var listExclusions = _importListExclusionService.All();
+            var listExclusions = _importListExclusionService.All().ToDictionary(x => x.ForeignId);
 
             foreach (var report in reports)
             {
-                _logger.ProgressTrace("Processing list item {0}/{1}", reportNumber, reports.Count);
-
-                reportNumber++;
+                _logger.ProgressTrace("Processing list item {0}/{1}", reportNumber++, reports.Count);
 
                 var importList = _importListFactory.Get(report.ImportListId);
 
@@ -104,7 +104,7 @@ namespace NzbDrone.Core.ImportLists
                         MapAlbumReport(report);
                     }
 
-                    ProcessAlbumReport(importList, report, listExclusions, albumsToAdd);
+                    ProcessAlbumReport(importList, report, listExclusions, albumsToAdd, artistsToAdd);
                 }
                 else if (report.Artist.IsNotNullOrWhiteSpace() || report.ArtistMusicBrainzId.IsNotNullOrWhiteSpace())
                 {
@@ -147,41 +147,38 @@ namespace NzbDrone.Core.ImportLists
 
             report.AlbumMusicBrainzId = mappedAlbum.ForeignAlbumId;
             report.Album = mappedAlbum.Title;
-            report.Artist = mappedAlbum.ArtistMetadata?.Value?.Name;
-            report.ArtistMusicBrainzId = mappedAlbum.ArtistMetadata?.Value?.ForeignArtistId;
+            report.Artist ??= mappedAlbum.ArtistMetadata?.Value?.Name;
+            report.ArtistMusicBrainzId ??= mappedAlbum.ArtistMetadata?.Value?.ForeignArtistId;
         }
 
-        private void ProcessAlbumReport(ImportListDefinition importList, ImportListItemInfo report, List<ImportListExclusion> listExclusions, List<Album> albumsToAdd)
+        private void ProcessAlbumReport(ImportListDefinition importList, ImportListItemInfo report, Dictionary<string, ImportListExclusion> listExclusions, List<Album> albumsToAdd, List<Artist> artistsToAdd)
         {
-            if (report.AlbumMusicBrainzId == null)
+            if (report.AlbumMusicBrainzId == null || report.ArtistMusicBrainzId == null)
             {
+                return;
+            }
+
+            // Check to see if album excluded
+            if (listExclusions.ContainsKey(report.AlbumMusicBrainzId))
+            {
+                _logger.Debug("{0} [{1}] Rejected due to list exclusion", report.AlbumMusicBrainzId, report.Album);
+                return;
+            }
+
+            // Check to see if artist excluded
+            if (listExclusions.ContainsKey(report.ArtistMusicBrainzId))
+            {
+                _logger.Debug("{0} [{1}] Rejected due to list exclusion for parent artist", report.AlbumMusicBrainzId, report.Album);
                 return;
             }
 
             // Check to see if album in DB
             var existingAlbum = _albumService.FindById(report.AlbumMusicBrainzId);
-
             if (existingAlbum != null)
             {
-                _logger.Debug("{0} [{1}] Rejected, Album Exists in DB", report.AlbumMusicBrainzId, report.Album);
-                return;
-            }
+                _logger.Debug("{0} [{1}] Rejected, Album Exists in DB.  Ensuring Album and Artist monitored.", report.AlbumMusicBrainzId, report.Album);
 
-            // Check to see if album excluded
-            var excludedAlbum = listExclusions.SingleOrDefault(s => s.ForeignId == report.AlbumMusicBrainzId);
-
-            if (excludedAlbum != null)
-            {
-                _logger.Debug("{0} [{1}] Rejected due to list exlcusion", report.AlbumMusicBrainzId, report.Album);
-                return;
-            }
-
-            // Check to see if artist excluded
-            var excludedArtist = listExclusions.SingleOrDefault(s => s.ForeignId == report.ArtistMusicBrainzId);
-
-            if (excludedArtist != null)
-            {
-                _logger.Debug("{0} [{1}] Rejected due to list exlcusion for parent artist", report.AlbumMusicBrainzId, report.Album);
+                ProcessAlbumReportForExistingAlbum(importList, existingAlbum);
                 return;
             }
 
@@ -190,37 +187,64 @@ namespace NzbDrone.Core.ImportLists
             {
                 var monitored = importList.ShouldMonitor != ImportListMonitorType.None;
 
+                var toAddArtist = ProcessArtistReport(importList, report, listExclusions, artistsToAdd);
+
                 var toAdd = new Album
                 {
                     ForeignAlbumId = report.AlbumMusicBrainzId,
                     Monitored = monitored,
                     AnyReleaseOk = true,
-                    Artist = new Artist
-                    {
-                        Monitored = monitored,
-                        RootFolderPath = importList.RootFolderPath,
-                        QualityProfileId = importList.ProfileId,
-                        MetadataProfileId = importList.MetadataProfileId,
-                        Tags = importList.Tags,
-                        AddOptions = new AddArtistOptions
-                        {
-                            SearchForMissingAlbums = monitored,
-                            Monitored = monitored,
-                            Monitor = monitored ? MonitorTypes.All : MonitorTypes.None
-                        }
-                    },
+                    Artist = toAddArtist,
                     AddOptions = new AddAlbumOptions
                     {
-                        SearchForNewAlbum = monitored
+                        SearchForNewAlbum = importList.ShouldSearch && toAddArtist.Id > 0
                     }
                 };
 
-                if (importList.ShouldMonitor == ImportListMonitorType.SpecificAlbum)
+                if (importList.ShouldMonitor == ImportListMonitorType.SpecificAlbum && toAddArtist.AddOptions != null)
                 {
-                    toAdd.Artist.Value.AddOptions.AlbumsToMonitor.Add(toAdd.ForeignAlbumId);
+                    Debug.Assert(toAddArtist.Id == 0, "new artist added but ID is not 0");
+                    toAddArtist.AddOptions.AlbumsToMonitor.Add(toAdd.ForeignAlbumId);
                 }
 
                 albumsToAdd.Add(toAdd);
+            }
+        }
+
+        private void ProcessAlbumReportForExistingAlbum(ImportListDefinition importList, Album existingAlbum)
+        {
+            if (importList.ShouldMonitorExisting && importList.ShouldMonitor != ImportListMonitorType.None)
+            {
+                Command searchCommand = null;
+                var existingArtist = existingAlbum.Artist.Value;
+
+                if (!existingArtist.Monitored || !existingAlbum.Monitored)
+                {
+                    searchCommand = importList.ShouldMonitor == ImportListMonitorType.EntireArtist ? new MissingAlbumSearchCommand(existingArtist.Id) : new AlbumSearchCommand(new List<int> { existingAlbum.Id });
+                }
+
+                if (!existingAlbum.Monitored)
+                {
+                    _albumService.SetAlbumMonitored(existingAlbum.Id, true);
+                }
+
+                if (!existingArtist.Monitored)
+                {
+                    existingArtist.Monitored = true;
+                    _artistService.UpdateArtist(existingArtist);
+                }
+
+                // Make sure all artist albums are monitored if required
+                if (importList.ShouldMonitor == ImportListMonitorType.EntireArtist && existingArtist.Albums.Value.Any(x => !x.Monitored))
+                {
+                    _albumService.SetMonitored(existingArtist.Albums.Value.Select(x => x.Id), true);
+                    searchCommand = new MissingAlbumSearchCommand(existingArtist.Id);
+                }
+
+                if (importList.ShouldSearch && searchCommand != null)
+                {
+                    _commandQueueManager.Push(searchCommand);
+                }
             }
         }
 
@@ -232,71 +256,83 @@ namespace NzbDrone.Core.ImportLists
             report.Artist = mappedArtist?.Metadata.Value?.Name;
         }
 
-        private void ProcessArtistReport(ImportListDefinition importList, ImportListItemInfo report, List<ImportListExclusion> listExclusions, List<Artist> artistsToAdd)
+        private Artist ProcessArtistReport(ImportListDefinition importList, ImportListItemInfo report, Dictionary<string, ImportListExclusion> listExclusions, List<Artist> artistsToAdd)
         {
             if (report.ArtistMusicBrainzId == null)
             {
-                return;
+                return null;
+            }
+
+            if (listExclusions.ContainsKey(report.ArtistMusicBrainzId))
+            {
+                _logger.Debug("{0} [{1}] Rejected due to list exclusion", report.ArtistMusicBrainzId, report.Artist);
+                return null;
+            }
+
+            // Check to see if artist in import
+            var existingImportArtist = artistsToAdd.Find(i => i.ForeignArtistId == report.ArtistMusicBrainzId);
+            if (existingImportArtist != null)
+            {
+                _logger.Debug("{0} [{1}] Rejected, artist exists in Import.", report.ArtistMusicBrainzId, report.Artist);
+
+                return existingImportArtist;
             }
 
             // Check to see if artist in DB
             var existingArtist = _artistService.FindById(report.ArtistMusicBrainzId);
-
             if (existingArtist != null)
             {
-                _logger.Debug("{0} [{1}] Rejected, Artist Exists in DB", report.ArtistMusicBrainzId, report.Artist);
-                return;
+                _logger.Debug("{0} [{1}] Rejected, artist exists in DB.  Ensuring artist monitored", report.ArtistMusicBrainzId, report.Artist);
+
+                ProcessArtistReportForExistingArtist(importList, existingArtist);
+                return existingArtist;
             }
 
-            // Check to see if artist excluded
-            var excludedArtist = listExclusions.Where(s => s.ForeignId == report.ArtistMusicBrainzId).SingleOrDefault();
+            var monitored = importList.ShouldMonitor != ImportListMonitorType.None;
 
-            if (excludedArtist != null)
+            var toAdd = new Artist
             {
-                _logger.Debug("{0} [{1}] Rejected due to list exlcusion", report.ArtistMusicBrainzId, report.Artist);
-                return;
-            }
-
-            // Append Artist if not already in DB or already on add list
-            if (artistsToAdd.All(s => s.Metadata.Value.ForeignArtistId != report.ArtistMusicBrainzId))
-            {
-                var monitored = importList.ShouldMonitor != ImportListMonitorType.None;
-
-                artistsToAdd.Add(new Artist
+                Metadata = new ArtistMetadata
                 {
-                    Metadata = new ArtistMetadata
-                    {
-                        ForeignArtistId = report.ArtistMusicBrainzId,
-                        Name = report.Artist
-                    },
+                    ForeignArtistId = report.ArtistMusicBrainzId,
+                    Name = report.Artist
+                },
+                Monitored = monitored,
+                MonitorNewItems = importList.MonitorNewItems,
+                RootFolderPath = importList.RootFolderPath,
+                QualityProfileId = importList.ProfileId,
+                MetadataProfileId = importList.MetadataProfileId,
+                Tags = importList.Tags,
+                AddOptions = new AddArtistOptions
+                {
+                    SearchForMissingAlbums = importList.ShouldSearch,
                     Monitored = monitored,
-                    MonitorNewItems = importList.MonitorNewItems,
-                    RootFolderPath = importList.RootFolderPath,
-                    QualityProfileId = importList.ProfileId,
-                    MetadataProfileId = importList.MetadataProfileId,
-                    Tags = importList.Tags,
-                    AddOptions = new AddArtistOptions
-                    {
-                        SearchForMissingAlbums = monitored,
-                        Monitored = monitored,
-                        Monitor = monitored ? MonitorTypes.All : MonitorTypes.None
-                    }
-                });
+                    Monitor = monitored ? MonitorTypes.All : MonitorTypes.None
+                }
+            };
+
+            artistsToAdd.Add(toAdd);
+
+            return toAdd;
+        }
+
+        private void ProcessArtistReportForExistingArtist(ImportListDefinition importList, Artist existingArtist)
+        {
+            if (importList.ShouldMonitorExisting && !existingArtist.Monitored)
+            {
+                existingArtist.Monitored = true;
+                _artistService.UpdateArtist(existingArtist);
+
+                if (importList.ShouldSearch)
+                {
+                    _commandQueueManager.Push(new MissingAlbumSearchCommand(existingArtist.Id));
+                }
             }
         }
 
         public void Execute(ImportListSyncCommand message)
         {
-            List<Album> processed;
-
-            if (message.DefinitionId.HasValue)
-            {
-                processed = SyncList(_importListFactory.Get(message.DefinitionId.Value));
-            }
-            else
-            {
-                processed = SyncAll();
-            }
+            var processed = message.DefinitionId.HasValue ? SyncList(_importListFactory.Get(message.DefinitionId.Value)) : SyncAll();
 
             _eventAggregator.PublishEvent(new ImportListSyncCompleteEvent(processed));
         }
