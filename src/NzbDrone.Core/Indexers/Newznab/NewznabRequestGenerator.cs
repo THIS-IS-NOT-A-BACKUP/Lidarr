@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NzbDrone.Common.Extensions;
@@ -45,6 +46,26 @@ namespace NzbDrone.Core.Indexers.Newznab
             }
         }
 
+        private string TextSearchEngine
+        {
+            get
+            {
+                var capabilities = _capabilitiesProvider.GetCapabilities(Settings);
+
+                return capabilities.TextSearchEngine;
+            }
+        }
+
+        private string AudioTextSearchEngine
+        {
+            get
+            {
+                var capabilities = _capabilitiesProvider.GetCapabilities(Settings);
+
+                return capabilities.AudioTextSearchEngine;
+            }
+        }
+
         public virtual IndexerPageableRequestChain GetRecentRequests()
         {
             var pageableRequests = new IndexerPageableRequestChain();
@@ -69,19 +90,25 @@ namespace NzbDrone.Core.Indexers.Newznab
 
             if (SupportsAudioSearch)
             {
+                var artistQuery = AudioTextSearchEngine == "raw" ? searchCriteria.ArtistQuery : searchCriteria.CleanArtistQuery;
+                var albumQuery = AudioTextSearchEngine == "raw" ? searchCriteria.AlbumQuery : searchCriteria.CleanAlbumQuery;
+
                 AddAudioPageableRequests(pageableRequests,
                     searchCriteria,
-                    NewsnabifyTitle($"&artist={searchCriteria.ArtistQuery}&album={searchCriteria.AlbumQuery}"));
+                    $"&artist={NewsnabifyTitle(artistQuery)}&album={NewsnabifyTitle(albumQuery)}");
             }
 
             if (SupportsSearch)
             {
                 pageableRequests.AddTier();
 
+                var artistQuery = TextSearchEngine == "raw" ? searchCriteria.ArtistQuery : searchCriteria.CleanArtistQuery;
+                var albumQuery = TextSearchEngine == "raw" ? searchCriteria.AlbumQuery : searchCriteria.CleanAlbumQuery;
+
                 pageableRequests.Add(GetPagedRequests(MaxPages,
                     Settings.Categories,
                     "search",
-                    NewsnabifyTitle($"&q={searchCriteria.ArtistQuery}+{searchCriteria.AlbumQuery}")));
+                    $"&q={NewsnabifyTitle($"{artistQuery}+{albumQuery}")}"));
             }
 
             return pageableRequests;
@@ -93,19 +120,22 @@ namespace NzbDrone.Core.Indexers.Newznab
 
             if (SupportsAudioSearch)
             {
+                var queryTitle = AudioTextSearchEngine == "raw" ? searchCriteria.ArtistQuery : searchCriteria.CleanArtistQuery;
+
                 AddAudioPageableRequests(pageableRequests,
                     searchCriteria,
-                    NewsnabifyTitle($"&artist={searchCriteria.ArtistQuery}"));
+                    $"&artist={NewsnabifyTitle(queryTitle)}");
             }
 
             if (SupportsSearch)
             {
                 pageableRequests.AddTier();
+                var queryTitle = TextSearchEngine == "raw" ? searchCriteria.ArtistQuery : searchCriteria.CleanArtistQuery;
 
                 pageableRequests.Add(GetPagedRequests(MaxPages,
-                    Settings.Categories,
-                    "search",
-                    NewsnabifyTitle($"&q={searchCriteria.ArtistQuery}")));
+                        Settings.Categories,
+                        "search",
+                        $"&q={NewsnabifyTitle(queryTitle)}"));
             }
 
             return pageableRequests;
@@ -151,7 +181,8 @@ namespace NzbDrone.Core.Indexers.Newznab
 
         private static string NewsnabifyTitle(string title)
         {
-            return title.Replace("+", "%20");
+            title = title.Replace("+", " ");
+            return Uri.EscapeDataString(title);
         }
     }
 }

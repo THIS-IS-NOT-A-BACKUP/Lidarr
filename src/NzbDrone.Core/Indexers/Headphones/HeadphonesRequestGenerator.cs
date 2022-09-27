@@ -39,7 +39,7 @@ namespace NzbDrone.Core.Indexers.Headphones
             pageableRequests.Add(GetPagedRequests(MaxPages,
                 Settings.Categories,
                 "search",
-                NewsnabifyTitle($"&q={searchCriteria.ArtistQuery}+{searchCriteria.AlbumQuery}")));
+                NewsnabifyTitle($"&q={searchCriteria.CleanArtistQuery}+{searchCriteria.CleanAlbumQuery}")));
 
             return pageableRequests;
         }
@@ -53,7 +53,7 @@ namespace NzbDrone.Core.Indexers.Headphones
             pageableRequests.Add(GetPagedRequests(MaxPages,
                 Settings.Categories,
                 "search",
-                NewsnabifyTitle($"&q={searchCriteria.ArtistQuery}")));
+                NewsnabifyTitle($"&q={searchCriteria.CleanArtistQuery}")));
 
             return pageableRequests;
         }
@@ -78,7 +78,7 @@ namespace NzbDrone.Core.Indexers.Headphones
             if (PageSize == 0)
             {
                 var request = new IndexerRequest($"{baseUrl}{parameters}", HttpAccept.Rss);
-                request.HttpRequest.AddBasicAuthentication(Settings.Username, Settings.Password);
+                request.HttpRequest.Credentials = new BasicNetworkCredential(Settings.Username, Settings.Password);
 
                 yield return request;
             }
@@ -87,7 +87,7 @@ namespace NzbDrone.Core.Indexers.Headphones
                 for (var page = 0; page < maxPages; page++)
                 {
                     var request = new IndexerRequest($"{baseUrl}&offset={page * PageSize}&limit={PageSize}{parameters}", HttpAccept.Rss);
-                    request.HttpRequest.AddBasicAuthentication(Settings.Username, Settings.Password);
+                    request.HttpRequest.Credentials = new BasicNetworkCredential(Settings.Username, Settings.Password);
 
                     yield return request;
                 }
