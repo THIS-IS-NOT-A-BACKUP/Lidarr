@@ -52,8 +52,8 @@ module.exports = {
 
   // Links
   defaultLinkHoverColor: '#fff',
-  linkColor: '#0b8750',
-  linkHoverColor: '#1b72e2',
+  linkColor: '#fff',
+  linkHoverColor: '#0b8750',
 
   // Header
   pageHeaderBackgroundColor: '#2a2a2a',
@@ -218,18 +218,18 @@ module.exports = {
   tableRowHoverBackgroundColor: 'rgba(255, 255, 255, 0.08)',
 
   //
-  // Series
+  // Srtist
 
-  addSeriesBackgroundColor: '#2a2a2a',
-  seriesBackgroundColor: '#2a2a2a',
+  addArtistBackgroundColor: '#2a2a2a',
+  artistBackgroundColor: '#2a2a2a',
   searchIconContainerBackgroundColor: '#2b2b2b',
   collapseButtonBackgroundColor: '#2a2a2a',
 
   //
-  // Season
+  // Album
 
-  seasonBackgroundColor: '#424242',
-  episodesBackgroundColor: '#2a2a2a',
+  albumBackgroundColor: '#424242',
+  trackBackgroundColor: '#2a2a2a',
 
   //
   // misc

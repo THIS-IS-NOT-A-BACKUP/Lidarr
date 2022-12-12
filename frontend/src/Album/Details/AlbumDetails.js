@@ -7,6 +7,7 @@ import AlbumCover from 'Album/AlbumCover';
 import DeleteAlbumModal from 'Album/Delete/DeleteAlbumModal';
 import EditAlbumModalConnector from 'Album/Edit/EditAlbumModalConnector';
 import AlbumInteractiveSearchModalConnector from 'Album/Search/AlbumInteractiveSearchModalConnector';
+import ArtistGenres from 'Artist/Details/ArtistGenres';
 import ArtistHistoryModal from 'Artist/History/ArtistHistoryModal';
 import HeartRating from 'Components/HeartRating';
 import Icon from 'Components/Icon';
@@ -199,6 +200,7 @@ class AlbumDetails extends Component {
       releaseDate,
       ratings,
       images,
+      genres,
       links,
       media,
       isSaving,
@@ -217,6 +219,11 @@ class AlbumDetails extends Component {
     } = this.props;
 
     const {
+      trackFileCount,
+      sizeOnDisk
+    } = statistics;
+
+    const {
       isOrganizeModalOpen,
       isRetagModalOpen,
       isArtistHistoryModalOpen,
@@ -230,6 +237,14 @@ class AlbumDetails extends Component {
     } = this.state;
 
     let expandIcon = icons.EXPAND_INDETERMINATE;
+
+    let trackFilesCountMessage = translate('TrackFilesCountMessage');
+
+    if (trackFileCount === 1) {
+      trackFilesCountMessage = '1 track file';
+    } else if (trackFileCount > 1) {
+      trackFilesCountMessage = `${trackFileCount} track files`;
+    }
 
     if (allExpanded) {
       expandIcon = icons.COLLAPSE;
@@ -385,6 +400,8 @@ class AlbumDetails extends Component {
                       rating={ratings.value}
                       iconSize={20}
                     />
+
+                    <ArtistGenres genres={genres} />
                   </div>
                 </div>
 
@@ -406,21 +423,32 @@ class AlbumDetails extends Component {
                     </span>
                   </Label>
 
-                  <Label
-                    className={styles.detailsLabel}
-                    size={sizes.LARGE}
-                  >
-                    <Icon
-                      name={icons.DRIVE}
-                      size={17}
-                    />
+                  <Tooltip
+                    anchor={
+                      <Label
+                        className={styles.detailsLabel}
+                        size={sizes.LARGE}
+                      >
+                        <Icon
+                          name={icons.DRIVE}
+                          size={17}
+                        />
 
-                    <span className={styles.sizeOnDisk}>
-                      {
-                        formatBytes(statistics.sizeOnDisk || 0)
-                      }
-                    </span>
-                  </Label>
+                        <span className={styles.sizeOnDisk}>
+                          {
+                            formatBytes(sizeOnDisk || 0)
+                          }
+                        </span>
+                      </Label>
+                    }
+                    tooltip={
+                      <span>
+                        {trackFilesCountMessage}
+                      </span>
+                    }
+                    kind={kinds.INVERSE}
+                    position={tooltipPositions.BOTTOM}
+                  />
 
                   <Label
                     className={styles.detailsLabel}
@@ -602,6 +630,7 @@ AlbumDetails.propTypes = {
   releaseDate: PropTypes.string.isRequired,
   ratings: PropTypes.object.isRequired,
   images: PropTypes.arrayOf(PropTypes.object).isRequired,
+  genres: PropTypes.arrayOf(PropTypes.string).isRequired,
   links: PropTypes.arrayOf(PropTypes.object).isRequired,
   media: PropTypes.arrayOf(PropTypes.object).isRequired,
   monitored: PropTypes.bool.isRequired,
