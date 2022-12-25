@@ -29,11 +29,13 @@ function getAlbumTypeStatistics(albums) {
   let sizeOnDisk = 0;
 
   albums.forEach((album) => {
-    sizeOnDisk = sizeOnDisk + album.statistics.sizeOnDisk;
-    trackFileCount = trackFileCount + album.statistics.trackFileCount;
+    if (album.statistics) {
+      sizeOnDisk = sizeOnDisk + album.statistics.sizeOnDisk;
+      trackFileCount = trackFileCount + album.statistics.trackFileCount;
 
-    if (album.statistics.trackFileCount === album.statistics.totalTrackCount || (album.monitored && isBefore(album.airDateUtc))) {
-      albumCount++;
+      if (album.statistics.trackFileCount === album.statistics.totalTrackCount || (album.monitored && isBefore(album.airDateUtc))) {
+        albumCount++;
+      }
     }
 
     if (album.monitored) {
@@ -220,6 +222,7 @@ class ArtistDetailsSeason extends Component {
             </span>
             <Popover
               className={styles.albumCountTooltip}
+              canFlip={true}
               anchor={
                 <Label
                   size={sizes.LARGE}

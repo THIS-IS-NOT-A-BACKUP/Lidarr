@@ -15,7 +15,7 @@ namespace NzbDrone.Core.Notifications.Emby
         }
 
         public override string Link => "https://emby.media/";
-        public override string Name => "Emby (Media Browser)";
+        public override string Name => "Emby / Jellyfin";
 
         public override void OnGrab(GrabMessage grabMessage)
         {
@@ -43,6 +43,32 @@ namespace NzbDrone.Core.Notifications.Emby
             if (Settings.UpdateLibrary)
             {
                 _mediaBrowserService.Update(Settings, artist);
+            }
+        }
+
+        public override void OnAlbumDelete(AlbumDeleteMessage deleteMessage)
+        {
+            if (Settings.Notify)
+            {
+                _mediaBrowserService.Notify(Settings, ALBUM_DELETED_TITLE_BRANDED, deleteMessage.Message);
+            }
+
+            if (Settings.UpdateLibrary)
+            {
+                _mediaBrowserService.Update(Settings, deleteMessage.Album.Artist);
+            }
+        }
+
+        public override void OnArtistDelete(ArtistDeleteMessage deleteMessage)
+        {
+            if (Settings.Notify)
+            {
+                _mediaBrowserService.Notify(Settings, ARTIST_DELETED_TITLE_BRANDED, deleteMessage.Message);
+            }
+
+            if (Settings.UpdateLibrary)
+            {
+                _mediaBrowserService.Update(Settings, deleteMessage.Artist);
             }
         }
 

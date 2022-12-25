@@ -53,8 +53,26 @@ namespace NzbDrone.Core.Notifications.Plex.Server
             UpdateIfEnabled(message.Artist);
         }
 
+        public override void OnAlbumDelete(AlbumDeleteMessage deleteMessage)
+        {
+            if (deleteMessage.DeletedFiles)
+            {
+                UpdateIfEnabled(deleteMessage.Album.Artist);
+            }
+        }
+
+        public override void OnArtistDelete(ArtistDeleteMessage deleteMessage)
+        {
+            if (deleteMessage.DeletedFiles)
+            {
+                UpdateIfEnabled(deleteMessage.Artist);
+            }
+        }
+
         private void UpdateIfEnabled(Artist artist)
         {
+            _plexTvService.Ping(Settings.AuthToken);
+
             if (Settings.UpdateLibrary)
             {
                 _logger.Debug("Scheduling library update for artist {0} {1}", artist.Id, artist.Name);
@@ -68,7 +86,8 @@ namespace NzbDrone.Core.Notifications.Plex.Server
 
         public override void ProcessQueue()
         {
-            PlexUpdateQueue queue = _pendingArtistCache.Find(Settings.Host);
+            var queue = _pendingArtistCache.Find(Settings.Host);
+
             if (queue == null)
             {
                 return;
@@ -121,6 +140,8 @@ namespace NzbDrone.Core.Notifications.Plex.Server
 
         public override ValidationResult Test()
         {
+            _plexTvService.Ping(Settings.AuthToken);
+
             var failures = new List<ValidationFailure>();
 
             failures.AddIfNotNull(_plexServerService.Test(Settings));
