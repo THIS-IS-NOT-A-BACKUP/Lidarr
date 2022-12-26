@@ -43,9 +43,13 @@ const artistTokens = [
 
   { token: '{Artist NameThe}', example: 'Artist Name, The' },
 
+  { token: '{Artist NameFirstCharacter}', example: 'A' },
+
   { token: '{Artist CleanName}', example: 'Artist Name' },
 
-  { token: '{Artist Disambiguation}', example: 'Disambiguation' }
+  { token: '{Artist Disambiguation}', example: 'Disambiguation' },
+
+  { token: '{Artist Genre}', example: 'Pop' }
 ];
 
 const albumTokens = [
@@ -57,7 +61,9 @@ const albumTokens = [
 
   { token: '{Album Type}', example: 'Album Type' },
 
-  { token: '{Album Disambiguation}', example: 'Disambiguation' }
+  { token: '{Album Disambiguation}', example: 'Disambiguation' },
+
+  { token: '{Album Genre}', example: 'Rock' }
 ];
 
 const mediumTokens = [
