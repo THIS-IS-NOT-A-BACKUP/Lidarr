@@ -18,5 +18,11 @@
 .actions {
   composes: cell from '~Components/Table/Cells/VirtualTableRowCell.css';
 
-  flex: 0 0 90px;
+  flex: 0 0 95px;
+}
+
+.checkInput {
+  composes: input from '~Components/Form/CheckInput.css';
+
+  margin-top: 0;
 }
