@@ -217,6 +217,22 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "deleteFiles",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "addImportListExclusion",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "responses": {
@@ -404,6 +420,14 @@
         ],
         "parameters": [
           {
+            "name": "moveFiles",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
             "name": "id",
             "in": "path",
             "required": true,
@@ -466,6 +490,22 @@
             "schema": {
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "deleteFiles",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "addImportListExclusion",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],
@@ -5296,6 +5336,14 @@
             "in": "query",
             "schema": {
               "type": "boolean"
+            }
+          },
+          {
+            "name": "ColonReplacementFormat",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
             }
           },
           {
@@ -11761,6 +11809,10 @@
           },
           "replaceIllegalCharacters": {
             "type": "boolean"
+          },
+          "colonReplacementFormat": {
+            "type": "integer",
+            "format": "int32"
           },
           "standardTrackFormat": {
             "type": "string",
