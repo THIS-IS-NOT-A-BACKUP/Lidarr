@@ -42,7 +42,7 @@ namespace NzbDrone.Core.Indexers
         {
             if (!SupportsRss)
             {
-                return new List<ReleaseInfo>();
+                return Array.Empty<ReleaseInfo>();
             }
 
             return FetchReleases(g => g.GetRecentRequests(), true);
@@ -52,7 +52,7 @@ namespace NzbDrone.Core.Indexers
         {
             if (!SupportsSearch)
             {
-                return new List<ReleaseInfo>();
+                return Array.Empty<ReleaseInfo>();
             }
 
             return FetchReleases(g => g.GetSearchRequests(searchCriteria));
@@ -62,7 +62,7 @@ namespace NzbDrone.Core.Indexers
         {
             if (!SupportsSearch)
             {
-                return new List<ReleaseInfo>();
+                return Array.Empty<ReleaseInfo>();
             }
 
             return FetchReleases(g => g.GetSearchRequests(searchCriteria));
@@ -92,7 +92,7 @@ namespace NzbDrone.Core.Indexers
                     lastReleaseInfo = _indexerStatusService.GetLastRssSyncReleaseInfo(Definition.Id);
                 }
 
-                for (int i = 0; i < pageableRequestChain.Tiers; i++)
+                for (var i = 0; i < pageableRequestChain.Tiers; i++)
                 {
                     var pageableRequests = pageableRequestChain.GetTier(i);
 
