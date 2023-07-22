@@ -2,11 +2,12 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import monitorNewItemsOptions from 'Utilities/Artist/monitorNewItemsOptions';
 import translate from 'Utilities/String/translate';
-import SelectInput from './SelectInput';
+import EnhancedSelectInput from './EnhancedSelectInput';
 
 function MonitorNewItemsSelectInput(props) {
   const {
     includeNoChange,
+    includeNoChangeDisabled = true,
     includeMixed,
     ...otherProps
   } = props;
@@ -17,7 +18,7 @@ function MonitorNewItemsSelectInput(props) {
     values.unshift({
       key: 'noChange',
       value: translate('NoChange'),
-      disabled: true
+      disabled: includeNoChangeDisabled
     });
   }
 
@@ -30,7 +31,7 @@ function MonitorNewItemsSelectInput(props) {
   }
 
   return (
-    <SelectInput
+    <EnhancedSelectInput
       values={values}
       {...otherProps}
     />
@@ -39,6 +40,7 @@ function MonitorNewItemsSelectInput(props) {
 
 MonitorNewItemsSelectInput.propTypes = {
   includeNoChange: PropTypes.bool.isRequired,
+  includeNoChangeDisabled: PropTypes.bool,
   includeMixed: PropTypes.bool.isRequired,
   onChange: PropTypes.func.isRequired
 };
