@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using NLog;
 using NzbDrone.Common.EnsureThat;
 using NzbDrone.Common.Extensions;
@@ -16,7 +17,7 @@ namespace NzbDrone.Core.Download
 {
     public interface IDownloadService
     {
-        void DownloadReport(RemoteAlbum remoteAlbum);
+        Task DownloadReport(RemoteAlbum remoteAlbum);
     }
 
     public class DownloadService : IDownloadService
@@ -49,15 +50,23 @@ namespace NzbDrone.Core.Download
             _logger = logger;
         }
 
-        public void DownloadReport(RemoteAlbum remoteAlbum)
+        public async Task DownloadReport(RemoteAlbum remoteAlbum)
+        {
+            var filterBlockedClients = remoteAlbum.Release.PendingReleaseReason == PendingReleaseReason.DownloadClientUnavailable;
+
+            var tags = remoteAlbum.Artist?.Tags;
+
+            var downloadClient = _downloadClientProvider.GetDownloadClient(remoteAlbum.Release.DownloadProtocol, remoteAlbum.Release.IndexerId, filterBlockedClients, tags);
+
+            await DownloadReport(remoteAlbum, downloadClient);
+        }
+
+        private async Task DownloadReport(RemoteAlbum remoteAlbum, IDownloadClient downloadClient)
         {
             Ensure.That(remoteAlbum.Artist, () => remoteAlbum.Artist).IsNotNull();
             Ensure.That(remoteAlbum.Albums, () => remoteAlbum.Albums).HasItems();
 
             var downloadTitle = remoteAlbum.Release.Title;
-            var filterBlockedClients = remoteAlbum.Release.PendingReleaseReason == PendingReleaseReason.DownloadClientUnavailable;
-            var tags = remoteAlbum.Artist?.Tags;
-            var downloadClient = _downloadClientProvider.GetDownloadClient(remoteAlbum.Release.DownloadProtocol, remoteAlbum.Release.IndexerId, filterBlockedClients, tags);
 
             if (downloadClient == null)
             {
@@ -71,7 +80,7 @@ namespace NzbDrone.Core.Download
             if (remoteAlbum.Release.DownloadUrl.IsNotNullOrWhiteSpace() && !remoteAlbum.Release.DownloadUrl.StartsWith("magnet:"))
             {
                 var url = new HttpUri(remoteAlbum.Release.DownloadUrl);
-                _rateLimitService.WaitAndPulse(url.Host, TimeSpan.FromSeconds(2));
+                await _rateLimitService.WaitAndPulseAsync(url.Host, TimeSpan.FromSeconds(2));
             }
 
             IIndexer indexer = null;
@@ -84,7 +93,7 @@ namespace NzbDrone.Core.Download
             string downloadClientId;
             try
             {
-                downloadClientId = downloadClient.Download(remoteAlbum, indexer);
+                downloadClientId = await downloadClient.Download(remoteAlbum, indexer);
                 _downloadClientStatusService.RecordSuccess(downloadClient.Definition.Id);
                 _indexerStatusService.RecordSuccess(remoteAlbum.Release.IndexerId);
             }
@@ -100,8 +109,7 @@ namespace NzbDrone.Core.Download
             }
             catch (ReleaseDownloadException ex)
             {
-                var http429 = ex.InnerException as TooManyRequestsException;
-                if (http429 != null)
+                if (ex.InnerException is TooManyRequestsException http429)
                 {
                     _indexerStatusService.RecordFailure(remoteAlbum.Release.IndexerId, http429.RetryAfter);
                 }

@@ -8,12 +8,17 @@ import { inputTypes, sizes } from 'Helpers/Props';
 import titleCase from 'Utilities/String/titleCase';
 import translate from 'Utilities/String/translate';
 
+const branchValues = [
+  'master',
+  'develop',
+  'nightly'
+];
+
 function UpdateSettings(props) {
   const {
     advancedSettings,
     settings,
     isWindows,
-    isDocker,
     packageUpdateMechanism,
     onInputChange
   } = props;
@@ -44,32 +49,21 @@ function UpdateSettings(props) {
 
   updateOptions.push({ key: 'script', value: 'Script' });
 
-  if (isDocker) {
-    return (
-      <FieldSet legend={translate('Updates')}>
-        <div>
-          {translate('UpdatingIsDisabledInsideADockerContainerUpdateTheContainerImageInstead')}
-        </div>
-      </FieldSet>
-    );
-  }
-
   return (
     <FieldSet legend={translate('Updates')}>
       <FormGroup
         advancedSettings={advancedSettings}
         isAdvanced={true}
       >
-        <FormLabel>
-          {translate('Branch')}
-        </FormLabel>
+        <FormLabel>{translate('Branch')}</FormLabel>
 
         <FormInputGroup
-          type={inputTypes.TEXT}
+          type={inputTypes.AUTO_COMPLETE}
           name="branch"
           helpText={usingExternalUpdateMechanism ? translate('UsingExternalUpdateMechanismBranchUsedByExternalUpdateMechanism') : translate('UsingExternalUpdateMechanismBranchToUseToUpdateLidarr')}
           helpLink="https://wiki.servarr.com/lidarr/faq#how-do-i-update-lidarr"
           {...branch}
+          values={branchValues}
           onChange={onInputChange}
           readOnly={usingExternalUpdateMechanism}
         />
@@ -83,14 +77,13 @@ function UpdateSettings(props) {
               isAdvanced={true}
               size={sizes.MEDIUM}
             >
-              <FormLabel>
-                {translate('Automatic')}
-              </FormLabel>
+              <FormLabel>{translate('Automatic')}</FormLabel>
 
               <FormInputGroup
                 type={inputTypes.CHECK}
                 name="updateAutomatically"
                 helpText={translate('UpdateAutomaticallyHelpText')}
+                helpTextWarning={updateMechanism.value === 'docker' ? translate('AutomaticUpdatesDisabledDocker', { appName: 'Lidarr' }) : undefined}
                 onChange={onInputChange}
                 {...updateAutomatically}
               />
@@ -100,9 +93,7 @@ function UpdateSettings(props) {
               advancedSettings={advancedSettings}
               isAdvanced={true}
             >
-              <FormLabel>
-                {translate('Mechanism')}
-              </FormLabel>
+              <FormLabel>{translate('Mechanism')}</FormLabel>
 
               <FormInputGroup
                 type={inputTypes.SELECT}
@@ -121,9 +112,7 @@ function UpdateSettings(props) {
                   advancedSettings={advancedSettings}
                   isAdvanced={true}
                 >
-                  <FormLabel>
-                    {translate('ScriptPath')}
-                  </FormLabel>
+                  <FormLabel>{translate('ScriptPath')}</FormLabel>
 
                   <FormInputGroup
                     type={inputTypes.TEXT}
@@ -144,7 +133,6 @@ UpdateSettings.propTypes = {
   advancedSettings: PropTypes.bool.isRequired,
   settings: PropTypes.object.isRequired,
   isWindows: PropTypes.bool.isRequired,
-  isDocker: PropTypes.bool.isRequired,
   packageUpdateMechanism: PropTypes.string.isRequired,
   onInputChange: PropTypes.func.isRequired
 };
