@@ -30,32 +30,32 @@ export const defaultState = {
   columns: [
     {
       name: 'medium',
-      label: translate('Medium'),
+      label: () => translate('Medium'),
       isVisible: false
     },
     {
       name: 'absoluteTrackNumber',
-      label: translate('Track'),
+      label: () => translate('Track'),
       isVisible: true
     },
     {
       name: 'title',
-      label: translate('Title'),
+      label: () => translate('Title'),
       isVisible: true
     },
     {
       name: 'path',
-      label: translate('Path'),
+      label: () => translate('Path'),
       isVisible: false
     },
     {
       name: 'duration',
-      label: translate('Duration'),
+      label: () => translate('Duration'),
       isVisible: true
     },
     {
       name: 'audioInfo',
-      label: translate('AudioInfo'),
+      label: () => translate('AudioInfo'),
       isVisible: true
     },
     {
@@ -65,21 +65,21 @@ export const defaultState = {
     },
     {
       name: 'customFormatScore',
-      columnLabel: translate('CustomFormatScore'),
+      columnLabel: () => translate('CustomFormatScore'),
       label: React.createElement(Icon, {
         name: icons.SCORE,
-        title: translate('CustomFormatScore')
+        title: () => translate('CustomFormatScore')
       }),
       isVisible: false
     },
     {
       name: 'status',
-      label: translate('Status'),
+      label: () => translate('Status'),
       isVisible: true
     },
     {
       name: 'actions',
-      columnLabel: translate('Actions'),
+      columnLabel: () => translate('Actions'),
       isVisible: true,
       isModifiable: false
     }
