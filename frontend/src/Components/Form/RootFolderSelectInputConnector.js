@@ -9,14 +9,17 @@ const ADD_NEW_KEY = 'addNew';
 function createMapStateToProps() {
   return createSelector(
     (state) => state.settings.rootFolders,
+    (state, { value }) => value,
+    (state, { includeMissingValue }) => includeMissingValue,
     (state, { includeNoChange }) => includeNoChange,
-    (rootFolders, includeNoChange) => {
+    (rootFolders, value, includeMissingValue, includeNoChange) => {
       const values = rootFolders.items.map((rootFolder) => {
         return {
           key: rootFolder.path,
           value: rootFolder.path,
           name: rootFolder.name,
-          freeSpace: rootFolder.freeSpace
+          freeSpace: rootFolder.freeSpace,
+          isMissing: false
         };
       });
 
@@ -25,6 +28,16 @@ function createMapStateToProps() {
           key: 'noChange',
           value: '',
           name: 'No Change',
+          isDisabled: true,
+          isMissing: false
+        });
+      }
+
+      if (includeMissingValue && !values.find((v) => v.key === value)) {
+        values.push({
+          key: value,
+          value,
+          isMissing: true,
           isDisabled: true
         });
       }
@@ -85,6 +98,27 @@ class RootFolderSelectInputConnector extends Component {
       if (defaultValue.key === ADD_NEW_KEY) {
         onChange({ name, value: '' });
       } else {
+        onChange({ name, value: defaultValue.key });
+      }
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    const {
+      name,
+      value,
+      values,
+      onChange
+    } = this.props;
+
+    if (prevProps.values === values) {
+      return;
+    }
+
+    if (!value && values.length && values.some((v) => !!v.key && v.key !== ADD_NEW_KEY)) {
+      const defaultValue = values[0];
+
+      if (defaultValue.key !== ADD_NEW_KEY) {
         onChange({ name, value: defaultValue.key });
       }
     }

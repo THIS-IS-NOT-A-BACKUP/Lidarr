@@ -7,17 +7,24 @@ import styles from './RootFolderSelectInputOption.css';
 
 function RootFolderSelectInputOption(props) {
   const {
+    id,
     value,
     name,
     freeSpace,
+    isMissing,
+    artistFolder,
     isMobile,
+    isWindows,
     ...otherProps
   } = props;
 
-  const text = value === '' ? name : `${name} [${value}]`;
+  const slashCharacter = isWindows ? '\\' : '/';
+
+  const text = name === '' ? value : `[${name}] ${value}`;
 
   return (
     <EnhancedSelectInputOption
+      id={id}
       isMobile={isMobile}
       {...otherProps}
     >
@@ -26,13 +33,33 @@ function RootFolderSelectInputOption(props) {
         isMobile && styles.isMobile
       )}
       >
-        <div>{text}</div>
+        <div className={styles.value}>
+          {text}
+
+          {
+            artistFolder && id !== 'addNew' ?
+              <div className={styles.artistFolder}>
+                {slashCharacter}
+                {artistFolder}
+              </div> :
+              null
+          }
+        </div>
 
         {
-          freeSpace != null &&
+          freeSpace == null ?
+            null :
             <div className={styles.freeSpace}>
               {formatBytes(freeSpace)} Free
             </div>
+        }
+
+        {
+          isMissing ?
+            <div className={styles.isMissing}>
+              Missing
+            </div> :
+            null
         }
       </div>
     </EnhancedSelectInputOption>
@@ -40,10 +67,18 @@ function RootFolderSelectInputOption(props) {
 }
 
 RootFolderSelectInputOption.propTypes = {
+  id: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
   value: PropTypes.string.isRequired,
   freeSpace: PropTypes.number,
-  isMobile: PropTypes.bool.isRequired
+  isMissing: PropTypes.bool,
+  artistFolder: PropTypes.string,
+  isMobile: PropTypes.bool.isRequired,
+  isWindows: PropTypes.bool
+};
+
+RootFolderSelectInputOption.defaultProps = {
+  name: ''
 };
 
 export default RootFolderSelectInputOption;
