@@ -11,16 +11,69 @@ import ConfirmModal from 'Components/Modal/ConfirmModal';
 import { icons, inputTypes, kinds } from 'Helpers/Props';
 import translate from 'Utilities/String/translate';
 
-const authenticationMethodOptions = [
-  { key: 'none', value: 'None' },
-  { key: 'basic', value: 'Basic (Browser Popup)' },
-  { key: 'forms', value: 'Forms (Login Page)' }
+export const authenticationMethodOptions = [
+  {
+    key: 'none',
+    get value() {
+      return translate('None');
+    },
+    isDisabled: true
+  },
+  {
+    key: 'external',
+    get value() {
+      return translate('External');
+    },
+    isHidden: true
+  },
+  {
+    key: 'basic',
+    get value() {
+      return translate('AuthBasic');
+    }
+  },
+  {
+    key: 'forms',
+    get value() {
+      return translate('AuthForm');
+    }
+  }
+];
+
+export const authenticationRequiredOptions = [
+  {
+    key: 'enabled',
+    get value() {
+      return translate('Enabled');
+    }
+  },
+  {
+    key: 'disabledForLocalAddresses',
+    get value() {
+      return translate('DisabledForLocalAddresses');
+    }
+  }
 ];
 
 const certificateValidationOptions = [
-  { key: 'enabled', value: 'Enabled' },
-  { key: 'disabledForLocalAddresses', value: 'Disabled for Local Addresses' },
-  { key: 'disabled', value: 'Disabled' }
+  {
+    key: 'enabled',
+    get value() {
+      return translate('Enabled');
+    }
+  },
+  {
+    key: 'disabledForLocalAddresses',
+    get value() {
+      return translate('DisabledForLocalAddresses');
+    }
+  },
+  {
+    key: 'disabled',
+    get value() {
+      return translate('Disabled');
+    }
+  }
 ];
 
 class SecuritySettings extends Component {
@@ -68,6 +121,7 @@ class SecuritySettings extends Component {
 
     const {
       authenticationMethod,
+      authenticationRequired,
       username,
       password,
       apiKey,
@@ -87,14 +141,32 @@ class SecuritySettings extends Component {
             type={inputTypes.SELECT}
             name="authenticationMethod"
             values={authenticationMethodOptions}
-            helpText={translate('AuthenticationMethodHelpText')}
+            helpText={translate('AuthenticationMethodHelpText', { appName: 'Lidarr' })}
+            helpTextWarning={translate('AuthenticationRequiredWarning', { appName: 'Lidarr' })}
             onChange={onInputChange}
             {...authenticationMethod}
           />
         </FormGroup>
 
         {
-          authenticationEnabled &&
+          authenticationEnabled ?
+            <FormGroup>
+              <FormLabel>{translate('AuthenticationRequired')}</FormLabel>
+
+              <FormInputGroup
+                type={inputTypes.SELECT}
+                name="authenticationRequired"
+                values={authenticationRequiredOptions}
+                helpText={translate('AuthenticationRequiredHelpText')}
+                onChange={onInputChange}
+                {...authenticationRequired}
+              />
+            </FormGroup> :
+            null
+        }
+
+        {
+          authenticationEnabled ?
             <FormGroup>
               <FormLabel>
                 {translate('Username')}
@@ -106,11 +178,12 @@ class SecuritySettings extends Component {
                 onChange={onInputChange}
                 {...username}
               />
-            </FormGroup>
+            </FormGroup> :
+            null
         }
 
         {
-          authenticationEnabled &&
+          authenticationEnabled ?
             <FormGroup>
               <FormLabel>
                 {translate('Password')}
@@ -122,7 +195,8 @@ class SecuritySettings extends Component {
                 onChange={onInputChange}
                 {...password}
               />
-            </FormGroup>
+            </FormGroup> :
+            null
         }
 
         <FormGroup>

@@ -22,6 +22,7 @@ namespace NzbDrone.Core.Configuration
     public interface IConfigFileProvider : IHandleAsync<ApplicationStartedEvent>,
                                            IExecute<ResetApiKeyCommand>
     {
+        XDocument LoadConfigFile();
         Dictionary<string, object> GetConfigDictionary();
         void SaveConfigDictionary(Dictionary<string, object> configValues);
         void EnsureDefaultConfigFile();
@@ -32,6 +33,7 @@ namespace NzbDrone.Core.Configuration
         bool EnableSsl { get; }
         bool LaunchBrowser { get; }
         AuthenticationType AuthenticationMethod { get; }
+        AuthenticationRequiredType AuthenticationRequired { get; }
         bool AnalyticsEnabled { get; }
         string LogLevel { get; }
         string ConsoleLogLevel { get; }
@@ -189,6 +191,8 @@ namespace NzbDrone.Core.Configuration
             }
         }
 
+        public AuthenticationRequiredType AuthenticationRequired => GetValueEnum("AuthenticationRequired", AuthenticationRequiredType.Enabled);
+
         public bool AnalyticsEnabled => GetValueBoolean("AnalyticsEnabled", true, persist: false);
 
         public string Branch => GetValue("Branch", "master").ToLowerInvariant();
@@ -339,7 +343,7 @@ namespace NzbDrone.Core.Configuration
             SaveConfigFile(xDoc);
         }
 
-        private XDocument LoadConfigFile()
+        public XDocument LoadConfigFile()
         {
             try
             {
