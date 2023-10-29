@@ -1,9 +1,7 @@
 import * as albums from './albumActions';
 import * as albumHistory from './albumHistoryActions';
-import * as albumStudio from './albumStudioActions';
 import * as app from './appActions';
 import * as artist from './artistActions';
-import * as artistEditor from './artistEditorActions';
 import * as artistHistory from './artistHistoryActions';
 import * as artistIndex from './artistIndexActions';
 import * as blocklist from './blocklistActions';
@@ -47,9 +45,7 @@ export default [
   providerOptions,
   queue,
   releases,
-  albumStudio,
   artist,
-  artistEditor,
   artistHistory,
   artistIndex,
   search,

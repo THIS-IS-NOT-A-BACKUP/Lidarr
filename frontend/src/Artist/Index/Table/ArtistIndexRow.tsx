@@ -2,6 +2,7 @@ import classNames from 'classnames';
 import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import AlbumTitleLink from 'Album/AlbumTitleLink';
+import { useSelect } from 'App/SelectContext';
 import { Statistics } from 'Artist/Artist';
 import ArtistBanner from 'Artist/ArtistBanner';
 import ArtistNameLink from 'Artist/ArtistNameLink';
@@ -17,6 +18,7 @@ import SpinnerIconButton from 'Components/Link/SpinnerIconButton';
 import ProgressBar from 'Components/ProgressBar';
 import RelativeDateCellConnector from 'Components/Table/Cells/RelativeDateCellConnector';
 import VirtualTableRowCell from 'Components/Table/Cells/VirtualTableRowCell';
+import VirtualTableSelectCell from 'Components/Table/Cells/VirtualTableSelectCell';
 import Column from 'Components/Table/Column';
 import TagListConnector from 'Components/TagListConnector';
 import { icons } from 'Helpers/Props';
@@ -24,6 +26,7 @@ import { executeCommand } from 'Store/Actions/commandActions';
 import getProgressBarKind from 'Utilities/Artist/getProgressBarKind';
 import formatBytes from 'Utilities/Number/formatBytes';
 import translate from 'Utilities/String/translate';
+import AlbumsCell from './AlbumsCell';
 import hasGrowableColumns from './hasGrowableColumns';
 import selectTableOptions from './selectTableOptions';
 import styles from './ArtistIndexRow.css';
@@ -32,10 +35,11 @@ interface ArtistIndexRowProps {
   artistId: number;
   sortKey: string;
   columns: Column[];
+  isSelectMode: boolean;
 }
 
 function ArtistIndexRow(props: ArtistIndexRowProps) {
-  const { artistId, columns } = props;
+  const { artistId, columns, isSelectMode } = props;
 
   const {
     artist,
@@ -77,6 +81,7 @@ function ArtistIndexRow(props: ArtistIndexRowProps) {
   const [hasBannerError, setHasBannerError] = useState(false);
   const [isEditArtistModalOpen, setIsEditArtistModalOpen] = useState(false);
   const [isDeleteArtistModalOpen, setIsDeleteArtistModalOpen] = useState(false);
+  const [selectState, selectDispatch] = useSelect();
 
   const onRefreshPress = useCallback(() => {
     dispatch(
@@ -121,8 +126,29 @@ function ArtistIndexRow(props: ArtistIndexRowProps) {
     setIsDeleteArtistModalOpen(false);
   }, [setIsDeleteArtistModalOpen]);
 
+  const onSelectedChange = useCallback(
+    ({ id, value, shiftKey }) => {
+      selectDispatch({
+        type: 'toggleSelected',
+        id,
+        isSelected: value,
+        shiftKey,
+      });
+    },
+    [selectDispatch]
+  );
+
   return (
     <>
+      {isSelectMode ? (
+        <VirtualTableSelectCell
+          id={artistId}
+          isSelected={selectState.selectedState[artistId]}
+          isDisabled={false}
+          onSelectedChange={onSelectedChange}
+        />
+      ) : null}
+
       {columns.map((column) => {
         const { name, isVisible } = column;
 
@@ -139,6 +165,7 @@ function ArtistIndexRow(props: ArtistIndexRowProps) {
               artistType={artistType}
               monitored={monitored}
               status={status}
+              isSelectMode={isSelectMode}
               isSaving={isSaving}
               component={VirtualTableRowCell}
             />
@@ -263,9 +290,13 @@ function ArtistIndexRow(props: ArtistIndexRowProps) {
 
         if (name === 'albumCount') {
           return (
-            <VirtualTableRowCell key={name} className={styles[name]}>
-              {albumCount}
-            </VirtualTableRowCell>
+            <AlbumsCell
+              key={name}
+              className={styles[name]}
+              artistId={artistId}
+              albumCount={albumCount}
+              isSelectMode={isSelectMode}
+            />
           );
         }
 

@@ -25,6 +25,7 @@ interface RowItemData {
   items: Artist[];
   sortKey: string;
   columns: Column[];
+  isSelectMode: boolean;
 }
 
 interface ArtistIndexTableProps {
@@ -34,6 +35,7 @@ interface ArtistIndexTableProps {
   jumpToCharacter?: string;
   scrollTop?: number;
   scrollerRef: React.MutableRefObject<HTMLElement>;
+  isSelectMode: boolean;
   isSmallScreen: boolean;
 }
 
@@ -47,7 +49,7 @@ const Row: React.FC<ListChildComponentProps<RowItemData>> = ({
   style,
   data,
 }) => {
-  const { items, sortKey, columns } = data;
+  const { items, sortKey, columns, isSelectMode } = data;
 
   if (index >= items.length) {
     return null;
@@ -62,11 +64,13 @@ const Row: React.FC<ListChildComponentProps<RowItemData>> = ({
         justifyContent: 'space-between',
         ...style,
       }}
+      className={styles.row}
     >
       <ArtistIndexRow
         artistId={artist.id}
         sortKey={sortKey}
         columns={columns}
+        isSelectMode={isSelectMode}
       />
     </div>
   );
@@ -82,6 +86,7 @@ function ArtistIndexTable(props: ArtistIndexTableProps) {
     sortKey,
     sortDirection,
     jumpToCharacter,
+    isSelectMode,
     isSmallScreen,
     scrollerRef,
   } = props;
@@ -91,6 +96,8 @@ function ArtistIndexTable(props: ArtistIndexTableProps) {
   const listRef: React.MutableRefObject<List> = useRef();
   const [measureRef, bounds] = useMeasure();
   const [size, setSize] = useState({ width: 0, height: 0 });
+  const windowWidth = window.innerWidth;
+  const windowHeight = window.innerHeight;
 
   const rowHeight = useMemo(() => {
     return showBanners ? 70 : 38;
@@ -101,8 +108,8 @@ function ArtistIndexTable(props: ArtistIndexTableProps) {
 
     if (isSmallScreen) {
       setSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
+        width: windowWidth,
+        height: windowHeight,
       });
 
       return;
@@ -115,10 +122,10 @@ function ArtistIndexTable(props: ArtistIndexTableProps) {
 
       setSize({
         width: width - padding * 2,
-        height: window.innerHeight,
+        height: windowHeight,
       });
     }
-  }, [isSmallScreen, scrollerRef, bounds]);
+  }, [isSmallScreen, windowWidth, windowHeight, scrollerRef, bounds]);
 
   useEffect(() => {
     const currentScrollListener = isSmallScreen ? window : scrollerRef.current;
@@ -177,6 +184,7 @@ function ArtistIndexTable(props: ArtistIndexTableProps) {
           columns={columns}
           sortKey={sortKey}
           sortDirection={sortDirection}
+          isSelectMode={isSelectMode}
         />
         <List<RowItemData>
           ref={listRef}
@@ -193,6 +201,7 @@ function ArtistIndexTable(props: ArtistIndexTableProps) {
             items,
             sortKey,
             columns,
+            isSelectMode,
           }}
         >
           {Row}
