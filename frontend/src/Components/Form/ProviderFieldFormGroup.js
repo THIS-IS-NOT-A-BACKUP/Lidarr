@@ -37,6 +37,12 @@ function getType({ type, selectOptionsProviderAction }) {
       return inputTypes.TEXT;
     case 'oAuth':
       return inputTypes.OAUTH;
+    case 'rootFolder':
+      return inputTypes.ROOT_FOLDER_SELECT;
+    case 'qualityProfile':
+      return inputTypes.QUALITY_PROFILE_SELECT;
+    case 'metadataProfile':
+      return inputTypes.METADATA_PROFILE_SELECT;
     default:
       return inputTypes.TEXT;
   }
