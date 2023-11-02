@@ -1,7 +1,7 @@
 import React from 'react';
 import { createAction } from 'redux-actions';
 import Icon from 'Components/Icon';
-import { filterTypes, icons, sortDirections } from 'Helpers/Props';
+import { filterBuilderTypes, filterBuilderValueTypes, filterTypes, icons, sortDirections } from 'Helpers/Props';
 import { createThunk, handleThunks } from 'Store/thunks';
 import createAjaxRequest from 'Utilities/createAjaxRequest';
 import serverSideCollectionHandlers from 'Utilities/serverSideCollectionHandlers';
@@ -60,7 +60,7 @@ export const defaultState = {
     },
     {
       name: 'customFormats',
-      label: 'Formats',
+      label: () => translate('Formats'),
       isSortable: false,
       isVisible: true
     },
@@ -91,16 +91,11 @@ export const defaultState = {
       isVisible: false
     },
     {
-      name: 'sourceTitle',
-      label: 'Source Title',
-      isVisible: false
-    },
-    {
       name: 'customFormatScore',
-      columnLabel: 'Custom Format Score',
+      columnLabel: () => translate('CustomFormatScore'),
       label: React.createElement(Icon, {
         name: icons.SCORE,
-        title: 'Custom format score'
+        title: () => translate('CustomFormatScore')
       }),
       isVisible: false
     },
@@ -218,6 +213,27 @@ export const defaultState = {
           type: filterTypes.EQUAL
         }
       ]
+    }
+  ],
+
+  filterBuilderProps: [
+    {
+      name: 'eventType',
+      label: () => translate('EventType'),
+      type: filterBuilderTypes.EQUAL,
+      valueType: filterBuilderValueTypes.HISTORY_EVENT_TYPE
+    },
+    {
+      name: 'artistIds',
+      label: () => translate('Artist'),
+      type: filterBuilderTypes.EQUAL,
+      valueType: filterBuilderValueTypes.ARTIST
+    },
+    {
+      name: 'quality',
+      label: () => translate('Quality'),
+      type: filterBuilderTypes.EQUAL,
+      valueType: filterBuilderValueTypes.QUALITY
     }
   ]
 
