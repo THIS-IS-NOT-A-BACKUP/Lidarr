@@ -124,6 +124,7 @@ class SecuritySettings extends Component {
       authenticationRequired,
       username,
       password,
+      passwordConfirmation,
       apiKey,
       certificateValidation
     } = settings;
@@ -141,8 +142,8 @@ class SecuritySettings extends Component {
             type={inputTypes.SELECT}
             name="authenticationMethod"
             values={authenticationMethodOptions}
-            helpText={translate('AuthenticationMethodHelpText', { appName: 'Lidarr' })}
-            helpTextWarning={translate('AuthenticationRequiredWarning', { appName: 'Lidarr' })}
+            helpText={translate('AuthenticationMethodHelpText')}
+            helpTextWarning={translate('AuthenticationRequiredWarning')}
             onChange={onInputChange}
             {...authenticationMethod}
           />
@@ -194,6 +195,21 @@ class SecuritySettings extends Component {
                 name="password"
                 onChange={onInputChange}
                 {...password}
+              />
+            </FormGroup> :
+            null
+        }
+
+        {
+          authenticationEnabled ?
+            <FormGroup>
+              <FormLabel>{translate('PasswordConfirmation')}</FormLabel>
+
+              <FormInputGroup
+                type={inputTypes.PASSWORD}
+                name="passwordConfirmation"
+                onChange={onInputChange}
+                {...passwordConfirmation}
               />
             </FormGroup> :
             null
