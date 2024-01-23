@@ -47,7 +47,7 @@
     "CutoffHelpText": "Þegar þessum gæðum er náð mun {appName} ekki lengur hlaða niður kvikmyndum",
     "CutoffUnmet": "Cut-off Ómetið",
     "Dates": "Dagsetningar",
-    "DBMigration": "DB fólksflutningar",
+    "DatabaseMigration": "DB fólksflutningar",
     "DelayProfile": "Seinka prófíl",
     "DelayProfiles": "Seinka snið",
     "Delete": "Eyða",
@@ -652,7 +652,6 @@
     "RemoveSelectedItemsQueueMessageText": "Ertu viss um að þú viljir fjarlægja {0} hlut {1} úr biðröðinni?",
     "RemovingTag": "Fjarlægir merkið",
     "SetTags": "Settu merki",
-    "RemoveFromDownloadClientHelpTextWarning": "Fjarlæging fjarlægir niðurhalið og skrána / skrána úr niðurhalsviðskiptavininum.",
     "ApplyTagsHelpTextHowToApplyArtists": "Hvernig á að setja merki á völdu kvikmyndirnar",
     "ApplyTagsHelpTextHowToApplyImportLists": "Hvernig á að setja merki á völdu kvikmyndirnar",
     "ApplyTagsHelpTextHowToApplyIndexers": "Hvernig á að setja merki á völdu kvikmyndirnar"
