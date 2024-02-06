@@ -38,6 +38,7 @@ namespace NzbDrone.Core.Music
         public string AlbumType { get; set; }
         public List<SecondaryAlbumType> SecondaryTypes { get; set; }
         public Ratings Ratings { get; set; }
+        public DateTime? LastSearchTime { get; set; }
 
         // These are Lidarr generated/config
         public string CleanTitle { get; set; }
@@ -95,6 +96,7 @@ namespace NzbDrone.Core.Music
             Monitored = other.Monitored;
             AnyReleaseOk = other.AnyReleaseOk;
             LastInfoSync = other.LastInfoSync;
+            LastSearchTime = other.LastSearchTime;
             Added = other.Added;
             AddOptions = other.AddOptions;
         }
