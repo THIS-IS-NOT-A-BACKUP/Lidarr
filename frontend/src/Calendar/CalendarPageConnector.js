@@ -6,6 +6,7 @@ import withCurrentPage from 'Components/withCurrentPage';
 import { searchMissing, setCalendarDaysCount, setCalendarFilter } from 'Store/Actions/calendarActions';
 import { executeCommand } from 'Store/Actions/commandActions';
 import createArtistCountSelector from 'Store/Selectors/createArtistCountSelector';
+import { createCustomFiltersSelector } from 'Store/Selectors/createClientSideCollectionSelector';
 import createCommandExecutingSelector from 'Store/Selectors/createCommandExecutingSelector';
 import createCommandsSelector from 'Store/Selectors/createCommandsSelector';
 import createUISettingsSelector from 'Store/Selectors/createUISettingsSelector';
@@ -59,6 +60,7 @@ function createMapStateToProps() {
   return createSelector(
     (state) => state.calendar.selectedFilterKey,
     (state) => state.calendar.filters,
+    createCustomFiltersSelector('calendar'),
     createArtistCountSelector(),
     createUISettingsSelector(),
     createMissingAlbumIdsSelector(),
@@ -67,6 +69,7 @@ function createMapStateToProps() {
     (
       selectedFilterKey,
       filters,
+      customFilters,
       artistCount,
       uiSettings,
       missingAlbumIds,
@@ -76,6 +79,7 @@ function createMapStateToProps() {
       return {
         selectedFilterKey,
         filters,
+        customFilters,
         colorImpairedMode: uiSettings.enableColorImpairedMode,
         hasArtist: !!artistCount.count,
         artistError: artistCount.error,
