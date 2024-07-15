@@ -77,6 +77,7 @@ namespace Lidarr.Api.V1.Artist
             return new ArtistResource
             {
                 Id = model.Id,
+                ArtistMetadataId = model.ArtistMetadataId,
 
                 ArtistName = model.Name,
 
@@ -107,9 +108,7 @@ namespace Lidarr.Api.V1.Artist
                 Tags = model.Tags,
                 Added = model.Added,
                 AddOptions = model.AddOptions,
-                Ratings = model.Metadata.Value.Ratings,
-
-                Statistics = new ArtistStatisticsResource()
+                Ratings = model.Metadata.Value.Ratings
             };
         }
 
