@@ -188,6 +188,7 @@ namespace NzbDrone.Core.Download.Clients.Deluge
                 // Here we detect if Deluge is managing the torrent and whether the seed criteria has been met.
                 // This allows drone to delete the torrent as appropriate.
                 item.CanMoveFiles = item.CanBeRemoved =
+                    item.DownloadClientInfo.RemoveCompletedDownloads &&
                     torrent.IsAutoManaged &&
                     torrent.StopAtRatio &&
                     torrent.Ratio >= torrent.StopRatio &&
@@ -198,7 +199,7 @@ namespace NzbDrone.Core.Download.Clients.Deluge
 
             if (ignoredCount > 0)
             {
-                _logger.Warn("{0} torrent(s) were ignored becuase they did not have a title, check Deluge and remove any invalid torrents");
+                _logger.Warn("{0} torrent(s) were ignored because they did not have a title. Check Deluge and remove any invalid torrents");
             }
 
             return items;
