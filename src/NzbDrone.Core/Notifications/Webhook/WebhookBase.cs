@@ -1,8 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
+using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Configuration;
+using NzbDrone.Core.MediaCover;
 using NzbDrone.Core.MediaFiles;
 using NzbDrone.Core.Music;
+using NzbDrone.Core.Tags;
 using NzbDrone.Core.ThingiProvider;
 
 namespace NzbDrone.Core.Notifications.Webhook
@@ -12,11 +15,15 @@ namespace NzbDrone.Core.Notifications.Webhook
     {
         private readonly IConfigFileProvider _configFileProvider;
         private readonly IConfigService _configService;
+        private readonly ITagRepository _tagRepository;
+        private readonly IMapCoversToLocal _mediaCoverService;
 
-        protected WebhookBase(IConfigFileProvider configFileProvider, IConfigService configService)
+        protected WebhookBase(IConfigFileProvider configFileProvider, IConfigService configService, ITagRepository tagRepository, IMapCoversToLocal mediaCoverService)
         {
             _configFileProvider = configFileProvider;
             _configService = configService;
+            _tagRepository = tagRepository;
+            _mediaCoverService = mediaCoverService;
         }
 
         public WebhookGrabPayload BuildOnGrabPayload(GrabMessage message)
@@ -29,8 +36,8 @@ namespace NzbDrone.Core.Notifications.Webhook
                 EventType = WebhookEventType.Grab,
                 InstanceName = _configFileProvider.InstanceName,
                 ApplicationUrl = _configService.ApplicationUrl,
-                Artist = new WebhookArtist(message.Artist),
-                Albums = remoteAlbum.Albums.Select(x => new WebhookAlbum(x)).ToList(),
+                Artist = GetArtist(message.Artist),
+                Albums = remoteAlbum.Albums.Select(GetAlbum).ToList(),
                 Release = new WebhookRelease(quality, remoteAlbum),
                 DownloadClient = message.DownloadClientName,
                 DownloadClientType = message.DownloadClientType,
@@ -47,8 +54,8 @@ namespace NzbDrone.Core.Notifications.Webhook
                 EventType = WebhookEventType.Download,
                 InstanceName = _configFileProvider.InstanceName,
                 ApplicationUrl = _configService.ApplicationUrl,
-                Artist = new WebhookArtist(message.Artist),
-                Album = new WebhookAlbum(message.Album),
+                Artist = GetArtist(message.Artist),
+                Album = GetAlbum(message.Album),
                 Tracks = trackFiles.SelectMany(x => x.Tracks.Value.Select(y => new WebhookTrack(y))).ToList(),
                 TrackFiles = trackFiles.ConvertAll(x => new WebhookTrackFile(x)),
                 IsUpgrade = message.OldFiles.Any(),
@@ -89,7 +96,7 @@ namespace NzbDrone.Core.Notifications.Webhook
                 EventType = WebhookEventType.ImportFailure,
                 InstanceName = _configFileProvider.InstanceName,
                 ApplicationUrl = _configService.ApplicationUrl,
-                Artist = new WebhookArtist(message.Artist),
+                Artist = GetArtist(message.Artist),
                 Tracks = trackFiles.SelectMany(x => x.Tracks.Value.Select(y => new WebhookTrack(y))).ToList(),
                 TrackFiles = trackFiles.ConvertAll(x => new WebhookTrackFile(x)),
                 IsUpgrade = message.OldFiles.Any(),
@@ -113,7 +120,7 @@ namespace NzbDrone.Core.Notifications.Webhook
                 EventType = WebhookEventType.Rename,
                 InstanceName = _configFileProvider.InstanceName,
                 ApplicationUrl = _configService.ApplicationUrl,
-                Artist = new WebhookArtist(artist),
+                Artist = GetArtist(artist),
                 RenamedTrackFiles = renamedFiles.ConvertAll(x => new WebhookRenamedTrackFile(x))
             };
         }
@@ -125,7 +132,7 @@ namespace NzbDrone.Core.Notifications.Webhook
                 EventType = WebhookEventType.Retag,
                 InstanceName = _configFileProvider.InstanceName,
                 ApplicationUrl = _configService.ApplicationUrl,
-                Artist = new WebhookArtist(message.Artist),
+                Artist = GetArtist(message.Artist),
                 TrackFile = new WebhookTrackFile(message.TrackFile)
             };
         }
@@ -137,7 +144,7 @@ namespace NzbDrone.Core.Notifications.Webhook
                 EventType = WebhookEventType.ArtistAdd,
                 InstanceName = _configFileProvider.InstanceName,
                 ApplicationUrl = _configService.ApplicationUrl,
-                Artist = new WebhookArtist(addMessage.Artist),
+                Artist = GetArtist(addMessage.Artist),
             };
         }
 
@@ -148,7 +155,7 @@ namespace NzbDrone.Core.Notifications.Webhook
                 EventType = WebhookEventType.ArtistDelete,
                 InstanceName = _configFileProvider.InstanceName,
                 ApplicationUrl = _configService.ApplicationUrl,
-                Artist = new WebhookArtist(deleteMessage.Artist),
+                Artist = GetArtist(deleteMessage.Artist),
                 DeletedFiles = deleteMessage.DeletedFiles
             };
         }
@@ -160,8 +167,8 @@ namespace NzbDrone.Core.Notifications.Webhook
                 EventType = WebhookEventType.AlbumDelete,
                 InstanceName = _configFileProvider.InstanceName,
                 ApplicationUrl = _configService.ApplicationUrl,
-                Artist = new WebhookArtist(deleteMessage.Album.Artist),
-                Album = new WebhookAlbum(deleteMessage.Album),
+                Artist = GetArtist(deleteMessage.Album.Artist),
+                Album = GetAlbum(deleteMessage.Album),
                 DeletedFiles = deleteMessage.DeletedFiles
             };
         }
@@ -218,7 +225,8 @@ namespace NzbDrone.Core.Notifications.Webhook
                     Id = 1,
                     Name = "Test Name",
                     Path = "C:\\testpath",
-                    MBId = "aaaaa-aaa-aaaa-aaaaaa"
+                    MBId = "aaaaa-aaa-aaaa-aaaaaa",
+                    Tags = new List<string> { "test-tag" }
                 },
                 Albums = new List<WebhookAlbum>
                 {
@@ -229,6 +237,44 @@ namespace NzbDrone.Core.Notifications.Webhook
                     }
                 }
             };
+        }
+
+        private WebhookArtist GetArtist(Artist artist)
+        {
+            if (artist?.Metadata?.Value == null)
+            {
+                return null;
+            }
+
+            _mediaCoverService.ConvertToLocalUrls(artist.Id, MediaCoverEntity.Artist, artist.Metadata.Value.Images);
+
+            return new WebhookArtist(artist, GetTagLabels(artist));
+        }
+
+        private WebhookAlbum GetAlbum(Album album)
+        {
+            if (album == null)
+            {
+                return null;
+            }
+
+            _mediaCoverService.ConvertToLocalUrls(album.Id, MediaCoverEntity.Album, album.Images);
+
+            return new WebhookAlbum(album);
+        }
+
+        private List<string> GetTagLabels(Artist artist)
+        {
+            if (artist == null)
+            {
+                return null;
+            }
+
+            return _tagRepository.GetTags(artist.Tags)
+                .Select(s => s.Label)
+                .Where(l => l.IsNotNullOrWhiteSpace())
+                .OrderBy(l => l)
+                .ToList();
         }
     }
 }
