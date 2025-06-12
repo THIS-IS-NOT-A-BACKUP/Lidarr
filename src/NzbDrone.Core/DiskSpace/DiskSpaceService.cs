@@ -21,7 +21,7 @@ namespace NzbDrone.Core.DiskSpace
         private readonly IRootFolderService _rootFolderService;
         private readonly Logger _logger;
 
-        private static readonly Regex _regexSpecialDrive = new Regex("^/var/lib/(docker|rancher|kubelet)(/|$)|^/(boot|etc)(/|$)|/docker(/var)?/aufs(/|$)", RegexOptions.Compiled);
+        private static readonly Regex _regexSpecialDrive = new Regex(@"^/var/lib/(docker|rancher|kubelet)(/|$)|^/(boot|etc)(/|$)|/docker(/var)?/aufs(/|$)|/\.timemachine", RegexOptions.Compiled);
 
         public DiskSpaceService(IDiskProvider diskProvider,
                                 IRootFolderService rootFolderService,
@@ -38,7 +38,10 @@ namespace NzbDrone.Core.DiskSpace
 
             var optionalRootFolders = GetFixedDisksRootPaths().Except(importantRootFolders).Distinct().ToList();
 
-            var diskSpace = GetDiskSpace(importantRootFolders).Concat(GetDiskSpace(optionalRootFolders, true)).ToList();
+            var diskSpace = GetDiskSpace(importantRootFolders)
+                .Concat(GetDiskSpace(optionalRootFolders, true))
+                .OrderBy(d => d.Path, StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
             return diskSpace;
         }
@@ -54,7 +57,7 @@ namespace NzbDrone.Core.DiskSpace
         private IEnumerable<string> GetFixedDisksRootPaths()
         {
             return _diskProvider.GetMounts()
-                .Where(d => d.DriveType == DriveType.Fixed)
+                .Where(d => d.DriveType is DriveType.Fixed or DriveType.Network)
                 .Where(d => !_regexSpecialDrive.IsMatch(d.RootDirectory))
                 .Select(d => d.RootDirectory);
         }

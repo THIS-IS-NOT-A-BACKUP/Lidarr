@@ -6,6 +6,7 @@ using NzbDrone.Common.Http;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Exceptions;
 using NzbDrone.Core.Indexers;
+using NzbDrone.Core.Localization;
 using NzbDrone.Core.Organizer;
 using NzbDrone.Core.Parser.Model;
 using NzbDrone.Core.RemotePathMappings;
@@ -24,8 +25,9 @@ namespace NzbDrone.Core.Download
                                    IDiskProvider diskProvider,
                                    IRemotePathMappingService remotePathMappingService,
                                    IValidateNzbs nzbValidationService,
+                                   ILocalizationService localizationService,
                                    Logger logger)
-            : base(configService, diskProvider, remotePathMappingService, logger)
+            : base(configService, diskProvider, remotePathMappingService, localizationService, logger)
         {
             _httpClient = httpClient;
             _nzbValidationService = nzbValidationService;
@@ -46,6 +48,7 @@ namespace NzbDrone.Core.Download
             {
                 var request = indexer?.GetDownloadRequest(url) ?? new HttpRequest(url);
                 request.RateLimitKey = remoteAlbum?.Release?.IndexerId.ToString();
+                request.AllowAutoRedirect = true;
 
                 var response = await RetryStrategy
                     .ExecuteAsync(static async (state, _) => await state._httpClient.GetAsync(state.request), (_httpClient, request))
@@ -57,7 +60,7 @@ namespace NzbDrone.Core.Download
             }
             catch (HttpException ex)
             {
-                if (ex.Response.StatusCode == HttpStatusCode.NotFound)
+                if (ex.Response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Gone)
                 {
                     _logger.Error(ex, "Downloading nzb file for album '{0}' failed since it no longer exists ({1})", remoteAlbum.Release.Title, url);
                     throw new ReleaseUnavailableException(remoteAlbum.Release, "Downloading nzb failed", ex);
