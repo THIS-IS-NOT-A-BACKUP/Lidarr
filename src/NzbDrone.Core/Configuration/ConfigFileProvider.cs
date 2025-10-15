@@ -204,13 +204,24 @@ namespace NzbDrone.Core.Configuration
 
                 if (enabled)
                 {
-                    SetValue("AuthenticationMethod", AuthenticationType.Basic);
-                    return AuthenticationType.Basic;
+                    SetValue("AuthenticationMethod", AuthenticationType.Forms);
+                    return AuthenticationType.Forms;
                 }
 
-                return Enum.TryParse<AuthenticationType>(_authOptions.Method, out var enumValue)
+                var value = Enum.TryParse<AuthenticationType>(_authOptions.Method, out var enumValue)
                     ? enumValue
                     : GetValueEnum("AuthenticationMethod", AuthenticationType.None);
+
+#pragma warning disable CS0618 // Type or member is obsolete
+                if (value == AuthenticationType.Basic)
+#pragma warning restore CS0618 // Type or member is obsolete
+                {
+                    SetValue("AuthenticationMethod", AuthenticationType.Forms);
+
+                    return AuthenticationType.Forms;
+                }
+
+                return value;
             }
         }
 
@@ -384,6 +395,12 @@ namespace NzbDrone.Core.Configuration
             if (EnableSsl && (GetValue("SslCertHash", string.Empty, false).IsNotNullOrWhiteSpace() || SslCertPath.IsNullOrWhiteSpace()))
             {
                 SetValue("EnableSsl", false);
+            }
+#pragma warning disable CS0618 // Type or member is obsolete
+            if (AuthenticationMethod == AuthenticationType.Basic)
+#pragma warning restore CS0618 // Type or member is obsolete
+            {
+                SetValue("AuthenticationMethod", AuthenticationType.Forms);
             }
         }
 
